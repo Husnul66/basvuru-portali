@@ -275,8 +275,8 @@
     </form>
   </div>
 
-  <script>
-    // BURAYA ACTIVEPIECES WEBHOOK URL ADRESİNİ YAPIŞTIR:
+ <script>
+    // BURAYA KENDİ ACTIVEPIECES WEBHOOK URL ADRESİNİ YAPIŞTIR:
     const WEBHOOK_URL = "https://cloud.activepieces.com/api/v1/webhooks/aDq9DdHFHStVImhnKjhYw";
 
     const form = document.getElementById("applicationForm");
@@ -305,24 +305,41 @@
     fileDrop.addEventListener("dragleave", () => fileDrop.classList.remove("active"));
     fileDrop.addEventListener("drop", () => fileDrop.classList.remove("active"));
 
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       statusAlert.style.display = "none";
-
-      if (WEBHOOK_URL.includes("BURAYA_KENDI_ID_GELECEK")) {
-        showAlert("Lütfen index.html içindeki WEBHOOK_URL alanına kendi Activepieces adresinizi yapıştırın.", "error");
-        return;
-      }
 
       submitBtn.disabled = true;
       spinner.style.display = "inline-block";
       btnText.textContent = "Gönderiliyor...";
 
       try {
-        const formData = new FormData(form);
+        const cvFile = cvInput.files[0];
+        const cvBase64 = cvFile ? await fileToBase64(cvFile) : "";
+
+        const payload = {
+          isim_soyisim: document.getElementById("isim_soyisim").value,
+          eposta: document.getElementById("eposta").value,
+          medeni_durum: document.getElementById("medeni_durum").value,
+          gelir: document.getElementById("gelir").value,
+          tecrube: document.getElementById("tecrube").value,
+          cv_dosya_adi: cvFile ? cvFile.name : "",
+          cv_base64: cvBase64
+        };
+
         const response = await fetch(WEBHOOK_URL, {
           method: "POST",
-          body: formData
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
         });
 
         if (response.ok) {
@@ -347,5 +364,3 @@
       statusAlert.style.display = "block";
     }
   </script>
-</body>
-</html>
